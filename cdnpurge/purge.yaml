@@ -1,0 +1,36 @@
+name: Empty the Container,  Upload the new files, and Purge the Cache (cache purge not tested yet, need seperate AZURE_CREDENTIALS )
+
+on:
+  workflow_dispatch:
+
+env:
+  container: 'https://<bucket name>.blob.core.windows.net/<Folder name>'
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 'Checkout GitHub Action'
+        uses: actions/checkout@v2
+
+      - name: Install azcopy
+        uses: kheiakiyama/install-azcopy-action@v1.0.3
+
+      # Delete all files in the container
+      - name: Empty the container
+        run: azcopy remove '${{ env.container }}?${{ secrets.SAS_TOKEN }}' --recursive
+
+      # Copy the contents of the current directory
+      - name: Copy new files
+        run: azcopy copy '<Folder name>/*' '${{ env.container }}?${{ secrets.SAS_TOKEN }}' --recursive --from-to=LocalBlob
+
+      # Install Azure CLI
+      - name: Install Azure CLI
+        run: |
+          curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
+
+      # Purge CDN cache
+      - name: Purge CDN cache
+        run: az cdn endpoint purge -g <RESOURCE_GROUP_NAME> -n <ENDPOINT_NAME> --profile-name <PROFILE_NAME> --content-paths '/*'
+        env:
+          AZURE_CREDENTIALS: ${{ secrets.AZURE_CREDENTIALS }}
