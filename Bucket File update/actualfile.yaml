@@ -1,3 +1,4 @@
+# Create a SAS token for bucket and save as a secret in git hub repo
 name: Deploy Azure Function
 
 on:
