@@ -1,0 +1,52 @@
+***Context: Currently we are following manual approach for deployment of C2C production Site. To achieve a complete Continuous Integration and Continuous Deployment, we need to make changes to GitHub workflow for Auto deployment.
+
+***Problem: Once a new image generated, a new tag is generated for that, that tag needs to manually updated in the Kubernetes manifest files. So every time we need to manually copy the latest tag from the latest build and paste it manifest file. and then we can deploy the latest changes.
+
+
+***Solution: Create an automation script that will automatically update the docker image tag every time its generated in the  Kubernetes manifest files deployment file.
+
+*Steps: 
+
+Step 1: Generate a Personal Access Token (with this cred we will push/update changes to Repository B/ Manifest repository ) 
+
+- Go to Git hub setting - Developer Setting - Personal access tokens -  Token (classic) - Select scopes - repo, workflow, write:packages, delete:packages, project, user.
+
+
+Step 2 Update the Workflow in Repository A/ MPS C2C backend 
+
+In Workflow file until the Image build tag and push to ACR repo steps are same. 
+
+     # Step 6: Checkout RepoB to update the workflow file
+    - name: Checkout RepoB
+      uses: actions/checkout@v3
+      with:
+        repository: <Github repo owner name(Bayrocklab)>/<repository name> # Replace with the actual username/repository for RepoB
+        token: ${{ secrets.REPOB_PAT }}  # Use REPOB_PAT instead of GITHUB_TOKEN
+
+    # Step 7: Update the workflow file in RepoB to use the new image tag
+    - name: Update image tag in RepoB workflow file
+      run: |
+        IMAGE_TAG=${{ env.sha_short }}
+        
+        # Update the image tag in the workflow file of RepoB using sed
+        sed -i "s|brlregistrity.azurecr.io/c2c-service:.*|brlregistrity.azurecr.io/c2c-service:${IMAGE_TAG}|g" <full path of the manifest file with name>   #.github/workflows/c2c_master_deployment.yaml
+        # Optionally display the updated file for verification
+        # cat .github/workflows/c2c_master_deployment.yaml
+    # Step 8: Commit and Push changes to RepoB
+    - name: Commit and Push changes to RepoB
+      run: |
+        git config --global user.email "<user mail id>"  # Set your email
+        git config --global user.name "<github username>"  # Set your name
+        git add <full path of the manifest file with name> #.github/workflows/c2c_master_deployment.yaml
+        git commit -m "Update Docker tag to ${IMAGE_TAG} in workflow"
+        git push origin main  # Push the changes to the main branch of RepoB
+      env:
+        GITHUB_TOKEN: ${{ secrets.REPOB_PAT }}  # Use REPOB_PAT for pushing changes
+
+ 
+
+
+Known Issues:
+
+
+
