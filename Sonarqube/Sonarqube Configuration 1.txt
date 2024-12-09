@@ -1,0 +1,113 @@
+**Context: Create a new Sonarqube server that will scan the code for bugs, vulnerabilities, and any other issues. 
+
+**Problem: If a new code having bugs get merged with the main branch that will lead to major issue, and conde instability in future.  
+
+**Solution: Every new code changes needs to be scanned for bugs, vulnerabilities before merging to main branch and once identified the developers can resolve the issue and then raise a PR.
+
+**Known Issues: Currently we have configured Sonar server with PostgreSQL database, currently the database is low on resources so sometimes the sonar scan get fails in between, the solution is to re-run the sonar scan job.
+
+============================================================================================================================
+
+Sonar Server Configuration
+
+Sonar-Server in Container Apps
+
+Configuration required in
+BRL Azure
+Dockerfile
+GitHub 
+Sonar-Server
+
+
+1- Azure - 
+
+Go to Entra ID  - create a new App registration for SonarQube (We need to configure it in Sonar Server for Authentication)
+
+Create new Client secret for above app registration "SonarQube-secret" copy the Value (unable to view once created) and Secret ID.
+
+In Authentication  - Add Platform  URL with  "Web" and the Redirect URI (Container App endpoint URL)
+
+Check option  -  ID tokens (used for implicit and hybrid flows)
+	      -  Accounts in this organizational directory only (BayRockLabs only - Single tenant)
+
+
+2 Dockerfile creation - 
+
+Create a Dockerfile for latest SonarQube image and port Expose 9000
+and sonar.Properties files with Azure DB details like DB id, password, URL, and Azure Client id, client secret, tenant id and Sonar URL created for Authentication.
+
+# Build Docker image 
+docker build -t brl_sonar . 
+
+#Login to ACR 
+az arc login --name brlregistrity
+
+#tag image
+docker tag brl_sonar:latest brlregistrity.azurecr.io/brl_sonar:latest
+
+# Push to ACR
+
+docker push brlregistrity.azurecr.io/brl_sonar:latest
+
+Image will be available in ACR 
+
+
+
+3 Container Apps
+
+Select Subscription
+Select Resource Group
+Container App Name
+Deployment Source  -  Container Image 
+
+Container Apps Environment  - Select Region and Container Apps Environment - Next
+
+Container details -  Name
+		  -  Image Source - Azure Container Registry
+			 - select   Subscription 
+			 - select - ACR registry name 
+			 - select - sonar image (recently created)
+			 - select - image tag
+
+Development stack - Generic
+
+Container resource allocation - Workload profile - up to 4vCPUs, 8Gb memory
+				- CPU and Memory-  1 CPU cores, 2Gi memory
+
+Ingress -  Enabled
+Ingress traffic - Accepting traffic from Anywhere
+Ingress type - HTTP
+Transport type - Auto 
+Target port - 9000 
+
+
+Review and create
+
+
+4 Sonar-server Configuration - Once logged in from Market place Download Azure Active Directory Plugin 
+
+For  Authentication : Create an App registrations : Name SonarQube
+
+WE will get 
+- Application (client) ID
+- client Secret value
+- Directory (tenant) ID
+
+
+In Sonar -Server -  For Azure Active Directory Plugin - 
+add the values of  
+
+- Application (client) ID
+- client Secret value
+- Directory (tenant) ID
+
+& In General setting  - Server base URL option - enter the container app endpoint URL
+
+OR you can create a separate user Sonar
+
+
+Go to your name  - Click on My Account  - Security - create token  -  
+Name  -  type - select User  token - Set No expiration
+
+Update the above token in GitHub Action  as SONAR_TOKEN
+
