@@ -1,0 +1,127 @@
+Context: To achieve automation in continuous integration and continuous deployment.
+
+
+Problem: For Current production we are following manual approach for deployment, so every time we need to login to AKS cluster and manually deploy Kubernetes manifest files.
+
+
+Solution: Azure AKS has added feature as Gitops, that will make automated deployment possible. for AKS Gitops uses Flux V2 as continuous deployment tool integrated within. We need to Configure k8s manifest file repository with it. Flux will fetch any changes in the manifest file and once recognized, it will deploy the changes into K8s cluster.
+
+
+Known Issues:
+
+
+
+
+=========================================================================================================================================================
+
+Steps: 
+
+
+GitOps
+
+With Flux V2
+
+
+Prerequisites - 
+Azure CLI:
+Kubernetes Cluster:
+Git Repository: 
+
+
+
+Steps to Set Up Azure GitOps
+1 Install Flux v2:  Kustomization With install it as a cluster extension in AKS.
+
+2 - Create Flux Configuration:  Define a Flux configuration that points to your Git repository. This configuration will sync your repository with the cluster.
+
+3 Deploy Applications:- Add your Kubernetes manifests, Helm charts, or Kustomize files to your Git repository.
+Flux will automatically detect changes in the repository and apply them to the cluster.
+
+4 Monitor and Manage:
+
+Use the Azure portal or CLI to monitor the status of your GitOps configurations.
+Ensure that the desired state defined in your Git repository is always reflected in your cluster.
+
+
+
+Steps
+
+Configuration name - 
+
+Operator details - 
+
+Namespace - c2c-prod-namespace
+
+Scope -  Namespace / Cluster  - 
+
+Type - Flux v2
+
+* Source kind - Git Repository 
+
+* Repository  setting
+
+Repository URL - https://github.com/BayRockLabs/c2c-k8s-manifests
+
+Reference type - Branch (Branch/Commit/Reference Tag/Semver Range)
+
+Branch - c2c
+
+Repository type - Private (Public/Private)
+
+# Private Repo Authentication - 
+Authentication source - Provide Authentication 
+HTTPS User -   # plaintext HTTPS username that will be used to access the repository
+HTTPS Key -    # plaintext HTTPS personal access token or password that will be used to access the repository
+HTTPS CA Cert (Optional)- Provide the HTTPS CA certificate for TLS communication with private Git Repository.
+
+# OR Secret stored in Cluster
+Local authentication secret reference name -    #Name of Kubernetes secret in the configuration namespace to use for communication with the source
+
+
+
+* Sync configuration - 
+
+Sync interval (minutes) -       #defines how often the controller will pull updates from the Git repository to the cluster.
+
+Sync timeout (minutes) -        #defines how long a repository sync will be allowed to continue before timing out.
+
+
+
+* Kustomization  - A Kustomization is a Flux resource that represents the set of manifests in a Git repo (plain Kubernetes yamls or Kustomize overlays) that Flux should reconcile to the cluster. 
+
+
+Create a Kustomization - 
+Instance name - 
+Path -  # path to manifest file in the repository (Incase Folder, folder name)
+The path within the repository where the Kustomization will begin looking for manifests to reconcile. If left blank, the root path of the repository will be used.
+
+
+Additional settings -  #how often the Kustomization reconciles the cluster with the manifests to ensure that the cluster remains in sync with the Repository
+
+Sync interval (minutes) - 
+
+Sync timeout (minutes) - 
+
+Create
+
+
+
+
+
+======================
+
+
+* Authentication 
+Authentication source - Type 1 -  Provide Authentication  
+
+				  SSH key authentication -  Let operator generates SSH keys or Use existing private key
+Use existing known hosts - 
+(The Flux controller maintains a list of common Git hosts in its known hosts file in order to authenticate the Git repository before establishing the SSH connection)
+
+SSH known hosts content source -  Paste Content / Known host content file       # need to research on it 
+
+Authentication source - Type 2  - Secret stored in cluster
+
+Local authentication secret reference name - 
+(Name of Kubernetes secret in the configuration namespace to use for communication with the source.)
+
