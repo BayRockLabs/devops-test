@@ -1,0 +1,64 @@
+name: Build, Tag Docker Image, and Update k8s Manifest repository Workflow
+
+on:
+  workflow_dispatch:  # This trigger allows the workflow to be manually triggered
+
+jobs:
+  build-and-update-tag-in-k8s-repo:
+    runs-on: ubuntu-latest
+
+    steps:
+    # Step 1: Checkout the API repo
+    - name: Checkout MPS-C2C-Backend-Services
+      uses: actions/checkout@v3
+
+    # Step 2: Generate the image tag using the short commit hash
+    - name: Set the image tag
+      id: vars
+      run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+
+    # Step 3: Docker Login to Azure Container Registry (using your secrets)
+    - name: Docker Login
+      uses: azure/docker-login@v1
+      with:
+        login-server: ${{ secrets.BRL_REGISTRY_LOGIN_SERVER }}
+        username: ${{ secrets.BRL_REGISTRY_USERNAME }}
+        password: ${{ secrets.BRL_REGISTRY_PASSWORD }}
+
+    # Step 4: Build and tag Docker image
+    - name: Build and tag Docker image
+      working-directory: c2c_service
+      run: |
+          IMAGE_TAG=${{ env.sha_short }}
+          docker build -t ${{ secrets.BRL_REGISTRY_LOGIN_SERVER }}/c2c-service:${IMAGE_TAG} .
+    # Step 5: Push Docker image to Azure Container Registry ..
+    - name: Push Docker image
+      run: |
+          IMAGE_TAG=${{ env.sha_short }}
+          docker push ${{ secrets.BRL_REGISTRY_LOGIN_SERVER }}/c2c-service:${IMAGE_TAG}
+    # Step 6: Checkout RepoB to update the workflow file
+    - name: Checkout c2c-k8s-manifests
+      uses: actions/checkout@v3
+      with:
+        repository: BayRockLabs/c2c-k8s-manifests
+        token: ${{ secrets.PAT_FOR_K8SREPO }}
+
+    # Step 7: Update the workflow file in c2c-k8s-manifests to use the new image tag
+    - name: Update image tag in c2c-k8s-manifests workflow file
+      run: |
+        IMAGE_TAG=${{ env.sha_short }}
+        
+        # Update the image tag in the workflow file of c2c-k8s-manifests using sed
+        sed -i "s|brlregistrity.azurecr.io/c2c-service:.*|brlregistrity.azurecr.io/c2c-service:${IMAGE_TAG}|g" .github/workflows/c2c_master_deployment.yaml
+     
+    # Step 8: Commit and Push changes to c2c-k8s-manifests
+    - name: Commit and Push changes to c2c-k8s-manifests
+      run: |
+        git checkout c2c
+        git config --global user.email "omkar.k@bayrocklabs.com" 
+        git config --global user.name "Omkark111"  
+        git add .github/workflows/c2c_master_deployment.yaml
+        git commit -m "Update Docker tag to ${IMAGE_TAG} in workflow"
+        git push origin c2c  
+      env:
+        GITHUB_TOKEN: ${{ secrets.PAT_FOR_K8SREPO }} 
