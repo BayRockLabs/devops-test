@@ -1,0 +1,29 @@
+Prod-release Manual  - 
+
+Front End -   Empty the container first, Upload the new file for front end  and then purge cache 
+
+GitHub repository - mps-c2c-react-frontend
+Branch  	  - Main
+
+Todo -  Update the new env variable in the application code.
+
+Azure Resources - 
+* Storage accounts - c2cbayrocklabscom
+* Front Door and CDN profiles - prod-profile
+
+Steps  - 
+
+In CLI 
+- Pull the latest code from Main from mps-c2c-react-frontend
+- Delete any previously generated build folder.
+- run npm i --legacy-peer-deps
+- run npm run build
+- Files generated from build  (build Folder) we need to upload to to Azure Storage Account (c2cbayrocklabscom)
+- Upload the files 
+- Go to Azure Portal
+- Go to Front Door and CDN profiles - prod-profile
+- Select Purge Cache
+- Select Endpoint  - c2c.
+- Select Domain  - Select all
+- Click check mark on purge all asset from the selected Domain
+- Click on Purge
