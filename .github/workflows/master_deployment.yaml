@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ms-master
+  namespace: c2c-prod-namespace
+spec:
+  selector:
+    matchLabels:
+      app: ms-master
+  template:
+    metadata:
+      labels:
+        app: ms-master
+    spec:
+      serviceAccountName: "workload-identity-sa"
+      volumes:
+          - name: secrets-store01-inline
+            csi:
+              driver: secrets-store.csi.k8s.io
+              readOnly: true
+              volumeAttributes:
+                secretProviderClass: "c2c-prod-namespace"
+      containers:
+      - name: ms-master
+        # image: sudha50/master-service:latest
+        image: brlregistrity.azurecr.io/c2c-service:3d5baaa
+        env:
+        - name: PROFILE
+          value: prod
+        envFrom:
+        - configMapRef:
+            name: envs-config
+        ports:
+        - containerPort: 8000
+        resources:
+          requests:
+            cpu: 95m
+            memory: 500Mi
+          limits:
+            cpu: 100m
+            memory: 500Mi
+        volumeMounts:
+          - name: secrets-store01-inline
+            mountPath: "/mnt/secrets-store"
+            readOnly: true
+      
