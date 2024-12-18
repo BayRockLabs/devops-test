@@ -24,7 +24,7 @@ spec:
       containers:
       - name: ms-master
         # image: sudha50/master-service:latest
-        image: brlregistrity.azurecr.io/c2c-service:76eaceb
+        image: brlregistrity.azurecr.io/c2c-service:188e1ed
         env:
         - name: PROFILE
           value: prod
