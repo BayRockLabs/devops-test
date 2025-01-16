@@ -3,10 +3,10 @@ name: Terraform
 on:
   push:
     branches:
-      - master
+      - main
   pull_request:
     branches:
-      - master
+      - main
   workflow_dispatch:
 
 jobs:
@@ -24,8 +24,7 @@ jobs:
           terraform_version: 1.0.0
 
       - name: Change directory to tfc2c
-        working-directory: devops-test/tfc2c
-        run: echo "Changed directory to tfc2c"
+        run: cd devops-test/tfc2c
 
       - name: Terraform Init
         working-directory: devops-test/tfc2c
