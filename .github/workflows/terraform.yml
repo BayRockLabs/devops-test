@@ -1,0 +1,42 @@
+name: Terraform
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+  workflow_dispatch:
+
+jobs:
+  terraform:
+    name: 'Terraform'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.0.0
+
+      - name: Change directory to tfc2c
+        working-directory: devops-test/tfc2c
+        run: echo "Changed directory to tfc2c"
+
+      - name: Terraform Init
+        working-directory: devops-test/tfc2c
+        run: terraform init
+
+      - name: Terraform Apply
+        if: github.event_name == 'push'
+        working-directory: devops-test/tfc2c
+        run: terraform apply -auto-approve
+
+      - name: Terraform Destroy
+        if: github.event_name == 'pull_request'
+        working-directory: devops-test/tfc2c
+        run: terraform destroy -auto-approve
